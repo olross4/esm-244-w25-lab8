@@ -1,9 +1,6 @@
 ---
 title: 'ESM 244 Lab: Point Pattern Analysis'
-author: 
-  - "Casey O'Hara"
-  - Nathan Grimes
-  - Allison Horst
+author: "Olivia Ross"
 date: today
 format: 
   html:
@@ -18,7 +15,6 @@ execute:
   warning: false
 ---
 Load packages
-
 ```{r setup}
 library(spatstat)
 library(terra) 
@@ -29,7 +25,6 @@ library(tmap)
 ```
 
 ## Read in Data and Visualize
-
 
 ```{r}
 ### Read in the tree vole data
@@ -52,21 +47,18 @@ humboldt_sf <- read_sf(dsn = here("data/voledata"),
   st_transform(crs = st_crs(voles_sf))
 
 
-
 ### plot them together
 ggplot() +
   geom_sf(data = humboldt_sf, 
-          color = "darkorchid", 
-          fill = "darkorchid4", 
-          size = 1) +
+          color = "grey28", 
+          fill = "azure3", 
+          size = 3) +
   geom_sf(data = voles_sf, 
-          color = "orange", 
+          color = "orchid4", 
           alpha = 0.7, 
           size = 2) +
   theme_void()
 ```
-
-
 ## Point Pattern Analysis
 
 Looking at the graph seems like there are distinct clusters of voles in Humboldt County, but there is a lot of noise so we may not be able to stay with staticstical certainity that the clusters our eyes pick out are not random.
@@ -94,18 +86,18 @@ plot(voles_full)
 Run to see vole "hotspots" by kernel density, then see what happens when you change sigma here!
 
 ```{r}
-voles_density <- density(voles_full, sigma = 5000) ### try different sigmas
+voles_density <- density(voles_full, sigma = 8000) ### try different sigmas
 
 plot(voles_density)
 ```
 
 Describe what the sigma parameter does.
 
+Changed the resolution of the lo
 
 ## Nearest neighbor (G-function)
 
 In this week's lecture, we learned about distance methods to compare our point pattern to a scenario of complete spatial randomness. Here, we'll use both the G- and L-functions (L function is the K-function, standardized...interpretation is the same) to compare our observed point pattern to a simulated CSR scenario, to help us determine if it is *more clustered* or *more uniform* than CSR.
-
 
 ```{r}
 #| output: false
@@ -118,7 +110,6 @@ gfunction_out <- envelope(voles_full, fun = Gest, r = r_vec,
 
 
 ```
-
 Let's examine the output, notice I turned the code chunk option for this code explicitly to `false` so it doesn't show up in the final document. We don't want to see the crazy output of the gfunction.
 
 ```{r}
@@ -130,10 +121,18 @@ plot(gfunction_out)
 ```
 
 
-The observed line is much higher than the bounds of the theoritical line. We have sufficient evidence to conclude the voles are not randomly distributed.  
+The observed line is much higher than the bounds of the theoretical line. We have sufficient evidence to conclude the voles are not randomly distributed.  
 
 While the base plot looks good. Let's make our own in ggplot to practice the our wrangling skills. What is the class of the `gfunction_out` object? What are the column names? What do you think the `obs`, `theo`, `lo`, and `hi` columns represent? How do we pivot the table to a useful dataframe to plot in ggplot?
 
+```{r}
+class(gfunction_out) #checking class
+head(gfunction_out) #column names 
+
+gfunction_out_long <- gfunction_out |>
+  as.data.frame() |>
+  pivot_longer(cols = obs:hi, names_to = "model", values_to = "g_val")
+```
 
 
 
@@ -144,6 +143,17 @@ How does the G-function differ from Ripley's K-function?
 
 
 With the same `envelope()` function from before, calculate the L-function. Because we're looking for the radius around points we have to change our `r` vector to match the entire size of the county ~80km. Also only use nsim=10 because it takes a long time to run.
+
+```{r}
+r_vec <- seq(0, 800000, 5000)
+
+lfunction_out <- envelope(voles_full, fun = Lest, r = r_vec, nsim=20)
+
+plot(lfunction_out)
+lfunction_out
+
+```
+
 
 Plot the L-function and interpret the results.
 
